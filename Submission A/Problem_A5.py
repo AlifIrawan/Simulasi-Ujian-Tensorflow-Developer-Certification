@@ -38,10 +38,10 @@ def solution_A5():
       reader = csv.reader(csvfile, delimiter=',')
       next(reader)
       for row in reader:
-        sunspots.append(# YOUR CODE HERE)
-        time_step.append(# YOUR CODE HERE)
+        sunspots.append(float(row[2]))
+        time_step.append(int(row[0]))
 
-    series = # YOUR CODE HERE
+    series = np.array(sunspots)
 
     # Normalization Function. DO NOT CHANGE THIS CODE
     min = np.min(series)
@@ -54,10 +54,10 @@ def solution_A5():
     split_time = 3000
 
 
-    time_train = # YOUR CODE HERE
-    x_train = # YOUR CODE HERE
-    time_valid = # YOUR CODE HERE
-    x_valid = # YOUR CODE HERE
+    time_train = time[:split_time]
+    x_train = series[:split_time]
+    time_valid = time[split_time:]
+    x_valid = series[split_time:]
 
     # DO NOT CHANGE THIS CODE
     window_size = 30
@@ -69,12 +69,22 @@ def solution_A5():
 
 
     model = tf.keras.models.Sequential([
-      # YOUR CODE HERE. 
+      tf.keras.layers.Conv1D(
+          filters=60,
+          kernel_size=5,
+          strides=1,
+          padding="causal",
+          activation="relu",
+          input_shape=[None, 1]),
+      tf.keras.layers.LSTM(60, return_sequences=True),
+      tf.keras.layers.LSTM(60, return_sequences=True),
+      tf.keras.layers.Dense(30, activation="relu"),
       tf.keras.layers.Dense(1)
     ])
 
 
-    # YOUR CODE 
+    model.compile(loss='mae', optimizer='adam')
+    model.fit(train_set, batch_size=256, epochs=10)
     return model
 
 

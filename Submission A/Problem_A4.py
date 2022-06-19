@@ -17,6 +17,12 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 
+class myCallback(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs={}):
+        if(logs.get('val_accuracy')>0.84):
+            print("\nTarget telah dicapai, berhenti training !!!")
+            self.model.stop_training = True
+
 def solution_A4():
     imdb, info = tfds.load("imdb_reviews", with_info=True, as_supervised=True)
 
@@ -66,6 +72,7 @@ def solution_A4():
         tf.keras.layers.Dense(1, activation='sigmoid')
     ])
 
+    callback = myCallback()
     model.compile(
         loss='binary_crossentropy',
         optimizer='adam',
@@ -78,7 +85,8 @@ def solution_A4():
         epochs=10,
         validation_data=(
             testing_padded,
-            testing_labels_final)
+            testing_labels_final),
+        callbacks=callback
         )
 
     return model
@@ -89,4 +97,3 @@ def solution_A4():
 if __name__ == '__main__':
     model = solution_A4()
     model.save("model_A4.h5")
-

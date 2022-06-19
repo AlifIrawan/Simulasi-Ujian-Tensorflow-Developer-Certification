@@ -18,6 +18,12 @@ import os
 from keras_preprocessing.image import ImageDataGenerator
 from tensorflow.keras.optimizers import RMSprop
 
+class myCallback(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs={}):
+        if(logs.get('val_accuracy')>0.84):
+            print("\nTarget telah dicapai, berhenti training !!!")
+            self.model.stop_training = True
+
 def solution_A2():
     data_url_1 = 'https://github.com/dicodingacademy/assets/releases/download/release-horse-or-human/horse-or-human.zip'
     urllib.request.urlretrieve(data_url_1, 'horse-or-human.zip')
@@ -35,15 +41,7 @@ def solution_A2():
 
     TRAINING_DIR = 'data/horse-or-human'
     VALIDATION_DIR = 'data/validation-horse-or-human'
-    train_datagen = ImageDataGenerator(
-        rescale=1./255,
-        rotation_range=40,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        shear_range=0.2,
-        zoom_range=0.2,
-        horizontal_flip=True,
-        fill_mode='nearest')
+    train_datagen = ImageDataGenerator(rescale=1./255)
 
 
     train_generator = train_datagen.flow_from_directory(
@@ -72,9 +70,9 @@ def solution_A2():
         tf.keras.layers.Dense(512, activation='relu'),
         tf.keras.layers.Dense(1, activation='sigmoid')
     ])
-
+    callback=myCallback()
     model.compile(optimizer=RMSprop(learning_rate=0.001), loss='binary_crossentropy', metrics=['accuracy'])
-    model.fit(train_generator,validation_data=validation_generator, epochs=20, verbose=2)
+    model.fit(train_generator,validation_data=validation_generator, epochs=20, verbose=2, callbacks=callback)
 
     return model
 
