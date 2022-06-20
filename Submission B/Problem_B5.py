@@ -72,13 +72,18 @@ def solution_B5():
     print(x_train.shape)
 
     model=tf.keras.models.Sequential([
-        tf.keras.layers.Dense(20, input_shape=[None, 1], activation="relu"),
-        tf.keras.layers.Dense(10, activation='relu'),
+        tf.keras.layers.Dense(30, activation="relu"),
+        tf.keras.layers.Dense(10, activation="relu"),
         tf.keras.layers.Dense(1),
     ])
 
-    model.compile(loss='mae', optimizer='adam')
-    model.fit(train_set, batch_size=256, epochs=100)
+    lr_schedule = tf.keras.callbacks.LearningRateScheduler(
+        lambda epoch: 1e-8 * 10**(epoch / 20))
+    optimizer = tf.keras.optimizers.SGD(lr=1e-8, momentum=0.9)
+    model.compile(loss=tf.keras.losses.Huber(),
+              optimizer=optimizer,
+              metrics=["mae"])
+    model.fit(train_set, epochs=100, callbacks=[lr_schedule])
     return model
 
 

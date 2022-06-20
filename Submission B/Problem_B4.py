@@ -17,11 +17,6 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 
-class myCallback(tf.keras.callbacks.Callback):
-    def on_epoch_end(self, epoch, logs={}):
-        if(logs.get('accuracy')>0.91 and logs.get('val_accuracy')>0.91):
-            print("\nTarget telah dicapai, berhenti training !!!")
-            self.model.stop_training = True
 
 def solution_B4():
     bbc = pd.read_csv(
@@ -39,15 +34,8 @@ def solution_B4():
 
     # YOUR CODE HERE
     # Using "shuffle=False"
-    stopwords = ["a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "as", "at", "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "could", "did", "do", "does", "doing", "down", "during", "each", "few", "for", "from", "further", "had", "has", "have", "having", "he", "he'd", "he'll", "he's", "her", "here", "here's", "hers", "herself", "him", "himself", "his", "how", "how's", "i", "i'd", "i'll", "i'm", "i've", "if", "in", "into", "is", "it", "it's", "its", "itself", "let's", "me", "more", "most", "my", "myself", "nor", "of", "on", "once", "only", "or", "other", "ought", "our", "ours", "ourselves", "out", "over", "own", "same", "she", "she'd", "she'll", "she's", "should", "so", "some", "such", "than", "that", "that's", "the", "their", "theirs", "them", "themselves", "then", "there", "there's", "these", "they", "they'd", "they'll", "they're", "they've", "this", "those", "through", "to", "too", "under", "until", "up", "very", "was", "we", "we'd", "we'll", "we're", "we've", "were", "what", "what's", "when", "when's", "where", "where's", "which", "while", "who", "who's", "whom", "why", "why's", "with", "would", "you", "you'd", "you'll", "you're", "you've", "your", "yours", "yourself", "yourselves" ]
     labels = bbc["category"].values.tolist()
-
-    sentences = []
-    for sentence in bbc["text"].values.tolist():
-      for word in stopwords:
-        token = " " + word + " "
-        sentence = sentence.replace(token, " ")
-      sentences.append(sentence)
+    sentences = bbc["text"].values.tolist()
 
     training_size = int(len(sentences) * training_portion)
     training_sentences = sentences[:training_size]
@@ -61,9 +49,9 @@ def solution_B4():
     word_index = tokenizer.word_index
 
     training_sequences = tokenizer.texts_to_sequences(training_sentences)
-    training_padded_sequences = pad_sequences(training_sequences, padding=padding_type, maxlen=max_length)
+    training_padded_sequences = pad_sequences(training_sequences, padding=padding_type, maxlen=max_length, truncating=trunc_type)
     validation_sequences = tokenizer.texts_to_sequences(validation_sentences)
-    validation_padded_sequences = pad_sequences(validation_sequences, padding=padding_type, maxlen=max_length)
+    validation_padded_sequences = pad_sequences(validation_sequences, padding=padding_type, maxlen=max_length, truncating=trunc_type)
 
     label_tokenizer = Tokenizer()
     label_tokenizer.fit_on_texts(labels)
@@ -74,25 +62,24 @@ def solution_B4():
     validation_label_sequences = np.array(validation_label_sequences)
 
     model = tf.keras.Sequential([
-        tf.keras.layers.Embedding(vocab_size, embedding_dim, input_length = max_length),
-        tf.keras.layers.GlobalAveragePooling1D(),
-        tf.keras.layers.Dense(24, activation='relu'),
+        tf.keras.layers.Embedding(vocab_size, embedding_dim, input_length=max_length),
+        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.Conv1D(64, 5, activation='relu'),
+        tf.keras.layers.MaxPooling1D(pool_size=4),
+        tf.keras.layers.LSTM(64),
         tf.keras.layers.Dense(6, activation='softmax')
     ])
 
-
-    callback = myCallback()
     model.compile(loss='sparse_categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
 
     model.fit(
         training_padded_sequences,
         training_label_sequences,
-        epochs=1000,
+        epochs=100,
         validation_data=(
             validation_padded_sequences,
             validation_label_sequences),
-        verbose=2,
-        callbacks=callback)
+        verbose=2)
 
     return model
 
