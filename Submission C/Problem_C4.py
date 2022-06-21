@@ -35,15 +35,43 @@ def solution_C4():
 
     sentences = []
     labels = []
-    # YOUR CODE HERE
+    
+    with open("./sarcasm.json", 'r') as f:
+      datastore = json.load(f)
+
+    for item in datastore:
+      sentences.append(item['headline'])
+      labels.append(item['is_sarcastic'])
+
+    training_sentences = sentences[0:training_size]
+    testing_sentences = sentences[training_size:]
+    training_labels = labels[0:training_size]
+    testing_labels = labels[training_size:]
 
     # Fit your tokenizer with training data
-    tokenizer =  # YOUR CODE HERE
+    tokenizer =  Tokenizer(num_words=vocab_size, oov_token=oov_tok)
+    tokenizer.fit_on_texts(training_sentences)
+    word_index = tokenizer.word_index
+
+    training_sequences = tokenizer.texts_to_sequences(training_sentences)
+    training_padded = pad_sequences(training_sequences, maxlen=max_length, padding=padding_type, truncating=trunc_type)
+    testing_sequences = tokenizer.texts_to_sequences(testing_sentences)
+    testing_padded = pad_sequences(testing_sequences, maxlen=max_length, padding=padding_type, truncating=trunc_type)
+    
+    training_labels = np.array(training_labels)
+    testing_labels = np.array(testing_labels)
 
     model = tf.keras.Sequential([
         # YOUR CODE HERE. DO not change the last layer or test may fail
+        tf.keras.layers.Embedding(vocab_size, embedding_dim, input_length=max_length),
+        tf.keras.layers.GlobalMaxPooling1D(),
+        tf.keras.layers.Dense(6, activation='relu'),
         tf.keras.layers.Dense(1, activation='sigmoid')
     ])
+
+    model.compile(loss='binary_crossentropy',optimizer='adam',metrics=['accuracy'])
+    history = model.fit(training_padded, training_labels, epochs=20, validation_data=(testing_padded, testing_labels), verbose=2)
+
     return model
 
 

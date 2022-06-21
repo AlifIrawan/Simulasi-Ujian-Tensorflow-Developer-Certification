@@ -28,20 +28,58 @@ def solution_C3():
     zip_ref.extractall('data/')
     zip_ref.close()
 
-    BASE_DIR = 'data/cats_and_dogs'
+    BASE_DIR = '/content/data/cats_and_dogs_filtered'
     train_dir = os.path.join(BASE_DIR, 'train')
     validation_dir = os.path.join(BASE_DIR, 'validation')
 
-    train_datagen =  # YOUR CODE HERE
+    train_datagen =  ImageDataGenerator(
+        rescale=1./255,
+        horizontal_flip=True,
+        zoom_range=0.2,
+        shear_range=0.2,
+        rotation_range=20,
+        validation_split=0.2)
 
     # YOUR IMAGE SIZE SHOULD BE 150x150
     # Make sure you used "categorical"
-    train_generator =  # YOUR CODE HERE
+    train_generator =  train_datagen.flow_from_directory(
+        train_dir,
+        target_size=(150,150),
+        batch_size=20,
+        color_mode='rgb',
+        class_mode='binary',
+        subset='training')
+
+    validation_datagen = ImageDataGenerator(rescale=1./255)
+    validation_generator =  validation_datagen.flow_from_directory(
+        validation_dir,
+        target_size=(150,150),
+        batch_size=20,
+        color_mode='rgb',
+        class_mode='binary',
+        subset='validation')
 
     model = tf.keras.models.Sequential([
         # YOUR CODE HERE, end with a Neuron Dense, activated by 'sigmoid'
+        tf.keras.layers.Conv2D(16, (3,3), activation='relu', input_shape=(150, 150, 3)),
+        tf.keras.layers.MaxPooling2D(2, 2),
+        tf.keras.layers.Conv2D(32, (3,3), activation='relu'),
+        tf.keras.layers.MaxPooling2D(2,2),
+        tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
+        tf.keras.layers.MaxPooling2D(2,2),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(512, activation='relu'),
         tf.keras.layers.Dense(1, activation='sigmoid')
     ])
+
+    model.compile(loss = 'binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+    model.fit(
+        train_generator,
+        steps_per_epoch=80,
+        epochs=20,
+        validation_data=validation_generator,
+        validation_steps=20,
+        verbose=2)
 
     return model
 
